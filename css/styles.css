@@ -714,6 +714,38 @@ input[type="range"]::-moz-range-thumb {
   font-weight: 600;
 }
 
+.channel-item {
+  position: relative;
+  z-index: 1;
+  transition: z-index 0s;
+}
+
+.channel-item:hover {
+  z-index: 10;
+}
+
+.channel-item .canvas-container {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: crosshair;
+}
+
+.channel-item .canvas-container:hover,
+.channel-item .canvas-container.force-hover {
+  transform: scale(1.03); /* Subtle pop for the container */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.channel-item .canvas-container canvas {
+  transition: transform 0.15s ease-out;
+  transform-origin: center center;
+}
+
+.channel-item .canvas-container:hover canvas,
+.channel-item .canvas-container.force-hover canvas {
+  transform: scale(3.5); /* Magnifying glass zoom factor */
+}
+
 /* --- Block Grid Overlay Canvas --- */
 .block-grid-container {
   position: relative;
@@ -859,6 +891,7 @@ input[type="range"]::-moz-range-thumb {
 
 .comparison-container canvas {
   display: block;
+  image-rendering: pixelated;
 }
 
 .comparison-divider {

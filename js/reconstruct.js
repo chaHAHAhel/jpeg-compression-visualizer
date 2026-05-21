@@ -106,7 +106,20 @@ export function compressAndReconstruct(imageData, width, height, quality, subsam
 
   // Step 6: Calculate statistics
   const originalSize = width * height * 3;
-  const estimatedCompressedSize = nonZeroCount * 2; // Rough Huffman estimate
+  
+  const numBlocks = channels.reduce((sum, ch) => {
+    const { blocksX, blocksY } = getBlockCount(ch.w, ch.h);
+    return sum + (blocksX * blocksY);
+  }, 0);
+
+  // Improved Huffman estimate:
+  // - ~600 bytes for standard JPEG headers/tables
+  // - ~0.5 bytes per block for delta-encoded DC coefficients
+  // - ~1.2 bytes per non-zero AC coefficient (run/size + value bits)
+  const estimatedCompressedSize = Math.round(
+    600 + (numBlocks * 0.5) + (Math.max(0, nonZeroCount - numBlocks) * 1.2)
+  );
+  
   const compressionRatio = originalSize / Math.max(1, estimatedCompressedSize);
   const psnr = calculatePSNR(imageData, reconstructedImageData, width, height);
   const zeroPercentage = totalCoefficients > 0

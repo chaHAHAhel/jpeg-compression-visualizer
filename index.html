@@ -81,7 +81,7 @@
           <div class="upload-area" id="upload-area">
             <div class="upload-icon">📁</div>
             <div class="upload-text">Drop an image here or click to upload</div>
-            <div class="upload-hint">Supports JPG, PNG, WebP • Will be resized to max 256px</div>
+            <div class="upload-hint">Supports JPG, PNG, WebP</div>
             <input type="file" id="file-input" accept="image/*">
           </div>
 
@@ -91,6 +91,7 @@
             <button class="btn btn-secondary btn-sm" id="btn-sample-gradient">🌈 Gradient Pattern</button>
             <button class="btn btn-secondary btn-sm" id="btn-sample-shapes">🔶 Geometric Shapes</button>
             <button class="btn btn-secondary btn-sm" id="btn-sample-photo">🏞️ Photo Scene</button>
+            <button class="btn btn-secondary btn-sm" id="btn-sample-big-b">📸 BIG B</button>
           </div>
         </div>
 
@@ -524,13 +525,21 @@
                   <button class="radio-option active" data-value="4:2:0">4:2:0</button>
                 </div>
               </div>
+              <div class="control-row">
+                <span class="control-label">Zoom:</span>
+                <input type="range" id="final-zoom-slider" min="1" max="5" step="0.5" value="1">
+                <span class="control-value" id="final-zoom-value">1.0x</span>
+              </div>
             </div>
 
-            <div class="comparison-container" id="comparison-container">
-              <canvas id="canvas-comparison"></canvas>
-              <div class="comparison-divider" id="comparison-divider"></div>
+            <div class="comparison-wrapper" style="width: 100%; max-height: 70vh; overflow: auto; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.2);">
+              <div class="comparison-container" id="comparison-container" style="margin: 0 auto;">
+                <canvas id="canvas-comparison"></canvas>
+                <div class="comparison-divider" id="comparison-divider"></div>
+              </div>
             </div>
-            <div class="comparison-labels">
+            
+            <div class="comparison-labels" style="margin-bottom: var(--space-md);">
               <span>◀ Original</span>
               <span>Drag to compare</span>
               <span>Compressed ▶</span>
@@ -562,6 +571,10 @@
             <div class="info-box">
               <div class="info-title">🎉 That's JPEG Compression!</div>
               <p>You've just walked through the complete JPEG compression pipeline. The real JPEG standard also includes Huffman coding after the RLE step, which further reduces the file size. Try adjusting the quality slider to see how it affects the image — lower quality means more aggressive quantization, more zeros, smaller files, but more visible artifacts (especially blockiness along 8×8 block boundaries).</p>
+            </div>
+            
+            <div style="text-align: center; margin-top: var(--space-lg);">
+              <button class="btn btn-primary" id="btn-download">⬇️ Download Compressed Image</button>
             </div>
           </div>
         </div>

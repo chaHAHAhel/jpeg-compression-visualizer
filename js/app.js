@@ -16,7 +16,7 @@ import {
   drawImageDataToCanvas, drawChannelToCanvas, drawHeatmap,
   drawGrid, drawBlockHighlight
 } from './canvas-utils.js';
-import { loadImageFromFile, createSampleImage } from './image-loader.js';
+import { loadImageFromFile, loadImageFromUrl, createSampleImage } from './image-loader.js';
 import { compressAndReconstruct, processBlock } from './reconstruct.js';
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -41,6 +41,7 @@ const state = {
   // Final settings
   finalQuality: 50,
   finalSubsampling: '4:2:0',
+  finalZoom: 1.0,
 };
 
 // ─── DOM Elements ─────────────────────────────────────────────────────────────
@@ -113,11 +114,14 @@ function updateStepperUI() {
 
   const nextBtn = $('btn-next');
   if (state.currentStep === state.totalSteps - 1) {
-    nextBtn.disabled = true;
-  } else if (state.currentStep === 0 && !state.imageLoaded) {
-    nextBtn.disabled = true;
+    nextBtn.style.display = 'none';
   } else {
-    nextBtn.disabled = false;
+    nextBtn.style.display = '';
+    if (state.currentStep === 0 && !state.imageLoaded) {
+      nextBtn.disabled = true;
+    } else {
+      nextBtn.disabled = false;
+    }
   }
 }
 
@@ -151,7 +155,7 @@ function setupImageLoading() {
   fileInput.addEventListener('change', async (e) => {
     if (e.target.files && e.target.files[0]) {
       try {
-        const result = await loadImageFromFile(e.target.files[0], 256);
+        const result = await loadImageFromFile(e.target.files[0], Infinity);
         loadImage(result);
       } catch (err) {
         console.error('Failed to load image:', err);
@@ -172,7 +176,7 @@ function setupImageLoading() {
     uploadArea.classList.remove('drag-over');
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       try {
-        const result = await loadImageFromFile(e.dataTransfer.files[0], 256);
+        const result = await loadImageFromFile(e.dataTransfer.files[0], Infinity);
         loadImage(result);
       } catch (err) {
         console.error('Failed to load image:', err);
@@ -189,6 +193,14 @@ function setupImageLoading() {
   });
   $('btn-sample-photo').addEventListener('click', () => {
     loadImage(createPhotoSample());
+  });
+  $('btn-sample-big-b').addEventListener('click', async () => {
+    try {
+      const result = await loadImageFromUrl('images/big_b.png', Infinity);
+      loadImage(result);
+    } catch (err) {
+      console.error('Failed to load BIG B image:', err);
+    }
   });
 }
 
@@ -736,6 +748,14 @@ function setupFinalControls() {
     }, 100);
   });
 
+  const zoomSlider = $('final-zoom-slider');
+  const zoomValue = $('final-zoom-value');
+  zoomSlider.addEventListener('input', () => {
+    state.finalZoom = parseFloat(zoomSlider.value);
+    zoomValue.textContent = state.finalZoom.toFixed(1) + 'x';
+    updateComparisonDisplay();
+  });
+
   // Subsampling mode
   const modeGroup = $('final-subsampling-mode');
   modeGroup.addEventListener('click', (e) => {
@@ -745,6 +765,32 @@ function setupFinalControls() {
     btn.classList.add('active');
     state.finalSubsampling = btn.dataset.value;
     renderStep7();
+  });
+
+  // Download button
+  $('btn-download').addEventListener('click', () => {
+    if (!lastComparisonData) return;
+    const { original, width, height } = lastComparisonData;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    // We use the ORIGINAL image and let the browser's native JPEG encoder 
+    // compress it at the selected quality, so the downloaded file is a true 
+    // JPEG and its file size matches expectations!
+    canvas.getContext('2d').putImageData(original, 0, 0);
+    
+    const qualityParam = Math.max(0.01, state.finalQuality / 100);
+    
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `compressed-q${state.finalQuality}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 'image/jpeg', qualityParam);
   });
 }
 
@@ -820,16 +866,23 @@ function updateComparisonDisplay() {
   const canvas = $('canvas-comparison');
   const container = $('comparison-container');
   const scale = Math.min(1, 560 / w); // Scale up for visibility
+  const zoom = state.finalZoom || 1.0;
+  
+  // Internal canvas resolution remains constant relative to zoom
   const displayW = Math.round(w * Math.max(scale, 2));
   const displayH = Math.round(h * Math.max(scale, 2));
 
   canvas.width = displayW;
   canvas.height = displayH;
   
-  // Make canvas responsive and container shrink-wrap it
+  // Update styles to support scrolling when zoomed, while fitting at 1x
   canvas.style.width = '100%';
-  canvas.style.height = 'auto';
-  container.style.maxWidth = `${displayW}px`;
+  canvas.style.height = '100%';
+  
+  container.style.width = `${displayW * zoom}px`;
+  container.style.aspectRatio = `${displayW} / ${displayH}`;
+  container.style.maxWidth = `${zoom * 100}%`; 
+  container.style.maxHeight = `${zoom * 70}vh`; // Bound by the wrapper's 70vh limit
   container.style.margin = '0 auto';
 
   const ctx = canvas.getContext('2d');
@@ -873,3 +926,55 @@ function formatBytes(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+// ─── Magnifying Glass Effect ──────────────────────────────────────────────────
+const syncGroups = [
+  ['canvas-sub-original', 'canvas-sub-reconstructed']
+];
+
+document.addEventListener('mousemove', (e) => {
+  const container = e.target.closest('.channel-item .canvas-container');
+  if (container) {
+    const rect = container.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+      canvas.style.transformOrigin = `${x}% ${y}%`;
+      
+      const group = syncGroups.find(g => g.includes(canvas.id));
+      if (group) {
+        group.forEach(id => {
+          if (id !== canvas.id) {
+            const sibling = document.getElementById(id);
+            if (sibling) {
+              sibling.style.transformOrigin = `${x}% ${y}%`;
+              sibling.closest('.canvas-container').classList.add('force-hover');
+            }
+          }
+        });
+      }
+    }
+  }
+});
+
+document.addEventListener('mouseout', (e) => {
+  const container = e.target.closest('.channel-item .canvas-container');
+  if (container) {
+    if (e.relatedTarget && container.contains(e.relatedTarget)) return;
+    
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+      const group = syncGroups.find(g => g.includes(canvas.id));
+      if (group) {
+        group.forEach(id => {
+          const sibling = document.getElementById(id);
+          if (sibling) {
+            sibling.closest('.canvas-container').classList.remove('force-hover');
+          }
+        });
+      }
+    }
+  }
+});
