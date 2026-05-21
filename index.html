@@ -3,597 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JPEG Compression Visualizer — Step by Step</title>
-  <meta name="description" content="Interactive visual guide showing how JPEG compression works, from color space conversion to quantization, one step at a time.">
+  <title>Compression Visualizer Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-xl);
+      box-sizing: border-box;
+    }
+    .hub-container {
+      max-width: 900px;
+      width: 100%;
+      text-align: center;
+    }
+    .hub-title {
+      font-size: 3rem;
+      margin-bottom: var(--space-sm);
+    }
+    .hub-subtitle {
+      font-size: var(--font-size-lg);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-xl);
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-lg);
+    }
+    .hub-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      text-decoration: none;
+      color: inherit;
+      transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .hub-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      border-color: var(--accent-color);
+    }
+    .card-icon {
+      font-size: 4rem;
+      margin-bottom: var(--space-md);
+    }
+    .card-title {
+      font-size: var(--font-size-xl);
+      font-weight: 600;
+      margin-bottom: var(--space-sm);
+      color: var(--text-primary);
+    }
+    .card-desc {
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    @media (max-width: 768px) {
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
-      <h1>JPEG Compression <span class="gradient-text">Visualizer</span></h1>
-      <p class="subtitle">Explore how JPEG compression works, one step at a time</p>
-    </header>
+  <div class="hub-container">
+    <h1 class="hub-title">Compression <span class="gradient-text">Visualizer</span> Hub</h1>
+    <p class="hub-subtitle">Choose an algorithm to explore interactively</p>
 
-    <!-- Stepper Navigation -->
-    <nav class="stepper" id="stepper">
-      <div class="step-item active" data-step="0">
-        <div class="step-circle"><span class="step-icon">📷</span></div>
-        <span class="step-label">Original</span>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step-item" data-step="1">
-        <div class="step-circle"><span class="step-icon">🎨</span></div>
-        <span class="step-label">Color Space</span>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step-item" data-step="2">
-        <div class="step-circle"><span class="step-icon">📐</span></div>
-        <span class="step-label">Subsampling</span>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step-item" data-step="3">
-        <div class="step-circle"><span class="step-icon">🧩</span></div>
-        <span class="step-label">Blocks</span>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step-item" data-step="4">
-        <div class="step-circle"><span class="step-icon">〰️</span></div>
-        <span class="step-label">DCT</span>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step-item" data-step="5">
-        <div class="step-circle"><span class="step-icon">🔢</span></div>
-        <span class="step-label">Quantize</span>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step-item" data-step="6">
-        <div class="step-circle"><span class="step-icon">⚡</span></div>
-        <span class="step-label">Encoding</span>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step-item" data-step="7">
-        <div class="step-circle"><span class="step-icon">✨</span></div>
-        <span class="step-label">Result</span>
-      </div>
-    </nav>
-
-    <!-- Main Content Area -->
-    <main class="main-content">
-
-      <!-- ==================== STEP 0: Original Image ==================== -->
-      <section class="step-panel active" id="step-0">
-        <div class="glass-card">
-          <div class="step-header">
-            <h2 class="step-title">
-              <span class="step-number-badge">1</span>
-              Load Your Image
-            </h2>
-            <p class="step-description">
-              Start by uploading an image or using a sample. JPEG compression works on any photographic image — 
-              the richer the colors and details, the more interesting the compression artifacts!
-            </p>
-          </div>
-
-          <div class="upload-area" id="upload-area">
-            <div class="upload-icon">📁</div>
-            <div class="upload-text">Drop an image here or click to upload</div>
-            <div class="upload-hint">Supports JPG, PNG, WebP</div>
-            <input type="file" id="file-input" accept="image/*">
-          </div>
-
-          <div class="upload-divider">or use a sample</div>
-
-          <div class="sample-row">
-            <button class="btn btn-secondary btn-sm" id="btn-sample-gradient">🌈 Gradient Pattern</button>
-            <button class="btn btn-secondary btn-sm" id="btn-sample-shapes">🔶 Geometric Shapes</button>
-            <button class="btn btn-secondary btn-sm" id="btn-sample-photo">🏞️ Photo Scene</button>
-            <button class="btn btn-secondary btn-sm" id="btn-sample-big-b">📸 BIG B</button>
-          </div>
+    <div class="cards-grid">
+      <a href="jpeg.html" class="hub-card">
+        <div class="card-icon">🖼️</div>
+        <div class="card-title">JPEG Pipeline</div>
+        <div class="card-desc">
+          Explore the complete JPEG image compression process step-by-step, from Color Space and Subsampling to DCT and Quantization.
         </div>
-
-        <div class="glass-card" id="image-preview-card" style="display: none;">
-          <div class="step-body two-column">
-            <div class="image-preview">
-              <canvas id="canvas-original"></canvas>
-            </div>
-            <div>
-              <h3 style="font-size: var(--font-size-lg); margin-bottom: var(--space-md);">Image Info</h3>
-              <div class="stats-grid">
-                <div class="stat-card">
-                  <div class="stat-value" id="stat-dimensions">—</div>
-                  <div class="stat-label">Dimensions</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-value" id="stat-pixels">—</div>
-                  <div class="stat-label">Total Pixels</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-value" id="stat-raw-size">—</div>
-                  <div class="stat-label">Raw Size (RGB)</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-value" id="stat-blocks">—</div>
-                  <div class="stat-label">8×8 Blocks</div>
-                </div>
-              </div>
-              <div class="info-box">
-                <div class="info-title">💡 What happens next?</div>
-                <p>JPEG doesn't compress the raw RGB pixels directly. Instead, it transforms the data through several clever steps that exploit how human vision works. Click <strong>Next</strong> to begin!</p>
-              </div>
-            </div>
-          </div>
+      </a>
+      
+      <a href="huffman.html" class="hub-card">
+        <div class="card-icon">🌳</div>
+        <div class="card-title">Image Huffman Coding</div>
+        <div class="card-desc">
+          Upload an image and see how pure Huffman coding losslessly compresses its grayscale pixel values by building an optimal binary tree.
         </div>
-      </section>
-
-      <!-- ==================== STEP 1: Color Space Conversion ==================== -->
-      <section class="step-panel" id="step-1">
-        <div class="glass-card">
-          <div class="step-header">
-            <h2 class="step-title">
-              <span class="step-number-badge">2</span>
-              Color Space Conversion
-            </h2>
-            <p class="step-description">
-              JPEG converts from RGB to <strong>YCbCr</strong> — separating brightness (Y) from color (Cb, Cr). 
-              Human eyes are much more sensitive to brightness changes than color changes, so we can compress color more aggressively.
-            </p>
-          </div>
-
-          <div class="step-body">
-            <div class="info-box">
-              <div class="info-title">📐 Conversion Formula</div>
-              <div class="info-content">
-                <div class="formula">Y  =  0.299·R + 0.587·G + 0.114·B</div><br>
-                <div class="formula">Cb = −0.169·R − 0.331·G + 0.500·B + 128</div><br>
-                <div class="formula">Cr =  0.500·R − 0.419·G − 0.081·B + 128</div>
-              </div>
-            </div>
-
-            <h3 style="font-size: var(--font-size-lg);">RGB Channels</h3>
-            <div class="channel-grid triple">
-              <div class="channel-item">
-                <div class="channel-title" style="color: #f87171;">Red Channel</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-red"></canvas>
-                </div>
-              </div>
-              <div class="channel-item">
-                <div class="channel-title" style="color: #4ade80;">Green Channel</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-green"></canvas>
-                </div>
-              </div>
-              <div class="channel-item">
-                <div class="channel-title" style="color: #60a5fa;">Blue Channel</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-blue"></canvas>
-                </div>
-              </div>
-            </div>
-
-            <h3 style="font-size: var(--font-size-lg); margin-top: var(--space-md);">YCbCr Channels</h3>
-            <div class="channel-grid triple">
-              <div class="channel-item">
-                <div class="channel-title" style="color: #e2e8f0;">Y (Luminance)</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-y"></canvas>
-                </div>
-              </div>
-              <div class="channel-item">
-                <div class="channel-title" style="color: #38bdf8;">Cb (Blue-difference)</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-cb"></canvas>
-                </div>
-              </div>
-              <div class="channel-item">
-                <div class="channel-title" style="color: #fb923c;">Cr (Red-difference)</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-cr"></canvas>
-                </div>
-              </div>
-            </div>
-
-            <div class="info-box">
-              <div class="info-title">💡 Why YCbCr?</div>
-              <p>Notice how the Y channel contains nearly all the visual detail — it looks like a proper grayscale photo. The Cb and Cr channels look "smoother" and contain less critical information. This is the key insight JPEG exploits!</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== STEP 2: Chroma Subsampling ==================== -->
-      <section class="step-panel" id="step-2">
-        <div class="glass-card">
-          <div class="step-header">
-            <h2 class="step-title">
-              <span class="step-number-badge">3</span>
-              Chroma Subsampling
-            </h2>
-            <p class="step-description">
-              Since human eyes are less sensitive to color than brightness, JPEG reduces the resolution of the Cb and Cr channels. 
-              This alone can cut the data by 33–50% with barely noticeable quality loss!
-            </p>
-          </div>
-
-          <div class="step-body">
-            <div class="control-row" style="justify-content: center;">
-              <span class="control-label">Subsampling Mode:</span>
-              <div class="radio-group" id="subsampling-mode">
-                <button class="radio-option active" data-value="4:4:4">4:4:4</button>
-                <button class="radio-option" data-value="4:2:2">4:2:2</button>
-                <button class="radio-option" data-value="4:2:0">4:2:0</button>
-              </div>
-            </div>
-
-            <div class="stats-grid" style="margin: var(--space-md) 0;">
-              <div class="stat-card">
-                <div class="stat-value" id="stat-sub-mode">4:4:4</div>
-                <div class="stat-label">Mode</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-sub-y-res">—</div>
-                <div class="stat-label">Y Resolution</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-sub-c-res">—</div>
-                <div class="stat-label">Cb/Cr Resolution</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-sub-savings">0%</div>
-                <div class="stat-label">Data Savings</div>
-              </div>
-            </div>
-
-            <div class="channel-grid triple">
-              <div class="channel-item">
-                <div class="channel-title">Y (unchanged)</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-sub-y"></canvas>
-                </div>
-              </div>
-              <div class="channel-item">
-                <div class="channel-title">Cb (subsampled)</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-sub-cb"></canvas>
-                </div>
-              </div>
-              <div class="channel-item">
-                <div class="channel-title">Cr (subsampled)</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-sub-cr"></canvas>
-                </div>
-              </div>
-            </div>
-
-            <h3 style="font-size: var(--font-size-lg); margin-top: var(--space-md);">Reconstructed Preview</h3>
-            <div class="channel-grid">
-              <div class="channel-item">
-                <div class="channel-title">Original</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-sub-original"></canvas>
-                </div>
-              </div>
-              <div class="channel-item">
-                <div class="channel-title">After Subsampling</div>
-                <div class="canvas-container">
-                  <canvas id="canvas-sub-reconstructed"></canvas>
-                </div>
-              </div>
-            </div>
-
-            <div class="info-box">
-              <div class="info-title">💡 Subsampling Modes</div>
-              <p><strong>4:4:4</strong> — No reduction (full quality). <strong>4:2:2</strong> — Cb/Cr halved horizontally (33% savings). <strong>4:2:0</strong> — Cb/Cr halved in both directions (50% savings, most common in JPEG).</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== STEP 3: Block Splitting ==================== -->
-      <section class="step-panel" id="step-3">
-        <div class="glass-card">
-          <div class="step-header">
-            <h2 class="step-title">
-              <span class="step-number-badge">4</span>
-              8×8 Block Splitting
-            </h2>
-            <p class="step-description">
-              JPEG divides each channel into 8×8 pixel blocks. Each block is then processed independently through the remaining steps. 
-              Click on a block to select it — we'll follow this block through DCT and quantization.
-            </p>
-          </div>
-
-          <div class="step-body two-column">
-            <div>
-              <div class="block-grid-container">
-                <canvas id="canvas-blocks" style="cursor: crosshair;"></canvas>
-              </div>
-              <div class="block-info">
-                <span id="block-info-text">Click on the image to select an 8×8 block</span>
-              </div>
-            </div>
-            <div>
-              <h3 style="font-size: var(--font-size-lg); margin-bottom: var(--space-md);">Selected Block (Zoomed)</h3>
-              <div class="heatmap-item">
-                <canvas id="canvas-block-zoom" width="320" height="320"></canvas>
-              </div>
-              <div class="info-box" style="margin-top: var(--space-md);">
-                <div class="info-title">🧩 Block Details</div>
-                <div class="info-content" id="block-details">
-                  Select a block to see its pixel values. Each value represents the Y (luminance) intensity from 0 (black) to 255 (white).
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== STEP 4: DCT Transform ==================== -->
-      <section class="step-panel" id="step-4">
-        <div class="glass-card">
-          <div class="step-header">
-            <h2 class="step-title">
-              <span class="step-number-badge">5</span>
-              Discrete Cosine Transform (DCT)
-            </h2>
-            <p class="step-description">
-              The DCT converts spatial pixel values into frequency coefficients. Low frequencies (top-left) capture smooth gradients, 
-              while high frequencies (bottom-right) capture sharp edges and fine details. Energy tends to concentrate in the top-left corner.
-            </p>
-          </div>
-
-          <div class="step-body">
-            <div class="info-box">
-              <div class="info-title">📐 DCT-II Formula</div>
-              <div class="info-content">
-                <div class="formula">F(u,v) = ¼·C(u)·C(v) · Σ Σ (f(x,y)−128) · cos((2x+1)uπ/16) · cos((2y+1)vπ/16)</div>
-                <p style="margin-top: var(--space-sm);">where C(0) = 1/√2, C(k) = 1 for k > 0. The −128 level-shifts the input to center around zero.</p>
-              </div>
-            </div>
-
-            <div class="heatmap-container">
-              <div class="heatmap-item">
-                <div class="heatmap-title">Spatial Domain (Pixel Values)</div>
-                <canvas id="canvas-dct-spatial"></canvas>
-                <div style="font-size: var(--font-size-xs); color: var(--text-muted); margin-top: var(--space-xs);">Values: 0–255 (after level shift: −128 to +127)</div>
-              </div>
-              <div style="display: flex; align-items: center; font-size: 24px; color: var(--text-muted); padding-top: 20px;">→</div>
-              <div class="heatmap-item">
-                <div class="heatmap-title">Frequency Domain (DCT Coefficients)</div>
-                <canvas id="canvas-dct-freq"></canvas>
-                <div style="font-size: var(--font-size-xs); color: var(--text-muted); margin-top: var(--space-xs);">Top-left = DC (average), others = AC (frequencies)</div>
-              </div>
-            </div>
-
-            <div class="info-box">
-              <div class="info-title">💡 Understanding DCT</div>
-              <p>The <strong>DC coefficient</strong> (top-left, F(0,0)) represents the average brightness of the block. The remaining 63 <strong>AC coefficients</strong> represent progressively higher spatial frequencies. Notice how most of the energy is concentrated in the top-left corner — this is why JPEG compression works so well!</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== STEP 5: Quantization ==================== -->
-      <section class="step-panel" id="step-5">
-        <div class="glass-card">
-          <div class="step-header">
-            <h2 class="step-title">
-              <span class="step-number-badge">6</span>
-              Quantization
-            </h2>
-            <p class="step-description">
-              This is where the <strong>actual lossy compression</strong> happens! Each DCT coefficient is divided by a value from the quantization table and rounded to the nearest integer.
-              Higher-frequency coefficients are divided by larger numbers, making them more likely to become zero — and zeros compress extremely well.
-            </p>
-          </div>
-
-          <div class="step-body">
-            <div class="control-row" style="justify-content: center;">
-              <span class="control-label">Quality:</span>
-              <input type="range" id="quality-slider" min="1" max="100" value="50" style="max-width: 300px;">
-              <span class="control-value" id="quality-value">50</span>
-            </div>
-
-            <div class="heatmap-container">
-              <div class="heatmap-item">
-                <div class="heatmap-title">DCT Coefficients</div>
-                <canvas id="canvas-quant-before"></canvas>
-              </div>
-              <div style="display: flex; align-items: center; font-size: 18px; color: var(--text-muted); padding-top: 20px;">÷</div>
-              <div class="heatmap-item">
-                <div class="heatmap-title">Quantization Table</div>
-                <canvas id="canvas-quant-table"></canvas>
-              </div>
-              <div style="display: flex; align-items: center; font-size: 18px; color: var(--text-muted); padding-top: 20px;">=</div>
-              <div class="heatmap-item">
-                <div class="heatmap-title">Quantized Result</div>
-                <canvas id="canvas-quant-after"></canvas>
-              </div>
-            </div>
-
-            <div class="stats-grid" style="margin-top: var(--space-md);">
-              <div class="stat-card">
-                <div class="stat-value" id="stat-nonzero">—</div>
-                <div class="stat-label">Non-zero Coefficients</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-zeros">—</div>
-                <div class="stat-label">Zero Coefficients</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-zero-pct">—</div>
-                <div class="stat-label">Zero Percentage</div>
-              </div>
-            </div>
-
-            <div class="zero-indicator">
-              <span class="control-label">Zeros:</span>
-              <div class="zero-bar">
-                <div class="zero-bar-fill" id="zero-bar-fill" style="width: 0%"></div>
-              </div>
-              <span class="zero-label" id="zero-label">0%</span>
-            </div>
-
-            <div class="info-box">
-              <div class="info-title">💡 Quality vs Compression</div>
-              <p>Lower quality → larger quantization values → more zeros → smaller file but more artifacts. Try moving the slider to see the tradeoff! At quality 100, the quantization table is nearly all 1s (minimal loss). At quality 1, it's extremely aggressive.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== STEP 6: Zigzag & Encoding ==================== -->
-      <section class="step-panel" id="step-6">
-        <div class="glass-card">
-          <div class="step-header">
-            <h2 class="step-title">
-              <span class="step-number-badge">7</span>
-              Zigzag Scan & Run-Length Encoding
-            </h2>
-            <p class="step-description">
-              The quantized 8×8 block is read in a <strong>zigzag pattern</strong> — from low frequency to high frequency. 
-              Since high-frequency coefficients are mostly zero after quantization, this creates long runs of zeros at the end, 
-              which compress beautifully with run-length encoding.
-            </p>
-          </div>
-
-          <div class="step-body">
-            <div class="zigzag-container">
-              <div class="heatmap-item">
-                <div class="heatmap-title">Zigzag Scan Order</div>
-                <canvas id="canvas-zigzag" width="320" height="320"></canvas>
-                <div style="margin-top: var(--space-sm);">
-                  <button class="btn btn-secondary btn-sm" id="btn-zigzag-animate">▶ Animate Zigzag</button>
-                </div>
-              </div>
-              <div style="flex: 1; min-width: 280px;">
-                <div class="heatmap-title">Zigzag Sequence (64 values)</div>
-                <div class="zigzag-sequence" id="zigzag-sequence"></div>
-
-                <div class="section-separator"></div>
-
-                <div class="heatmap-title">Run-Length Encoding</div>
-                <div class="rle-display" id="rle-display"></div>
-
-                <div class="info-box" style="margin-top: var(--space-md);">
-                  <div class="info-title">📦 Encoding Summary</div>
-                  <div class="info-content">
-                    <div id="encoding-summary">Select a block and adjust quality to see the encoding.</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="info-box">
-              <div class="info-title">💡 Why Zigzag?</div>
-              <p>The zigzag order groups coefficients by frequency — low frequencies first, high frequencies last. After quantization, most high-frequency coefficients are zero. Reading in zigzag order puts all those zeros together at the end, where a single <strong>EOB (End of Block)</strong> marker can replace them all. This is then followed by <strong>Huffman coding</strong> for the final bitstream.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ==================== STEP 7: Final Result ==================== -->
-      <section class="step-panel" id="step-7">
-        <div class="glass-card">
-          <div class="step-header">
-            <h2 class="step-title">
-              <span class="step-number-badge">8</span>
-              Final Result — Reconstructed Image
-            </h2>
-            <p class="step-description">
-              After processing all blocks through DCT → Quantization → Dequantization → Inverse DCT, 
-              we reconstruct the full image. Compare the result with the original to see the compression artifacts!
-            </p>
-          </div>
-
-          <div class="step-body">
-            <div class="controls-group" style="max-width: 500px; margin: 0 auto;">
-              <div class="control-row">
-                <span class="control-label">Quality:</span>
-                <input type="range" id="final-quality-slider" min="1" max="100" value="50">
-                <span class="control-value" id="final-quality-value">50</span>
-              </div>
-              <div class="control-row">
-                <span class="control-label">Subsampling:</span>
-                <div class="radio-group" id="final-subsampling-mode">
-                  <button class="radio-option" data-value="4:4:4">4:4:4</button>
-                  <button class="radio-option" data-value="4:2:2">4:2:2</button>
-                  <button class="radio-option active" data-value="4:2:0">4:2:0</button>
-                </div>
-              </div>
-              <div class="control-row">
-                <span class="control-label">Zoom:</span>
-                <input type="range" id="final-zoom-slider" min="1" max="5" step="0.5" value="1">
-                <span class="control-value" id="final-zoom-value">1.0x</span>
-              </div>
-            </div>
-
-            <div class="comparison-wrapper" style="width: 100%; max-height: 70vh; overflow: auto; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: rgba(0,0,0,0.2);">
-              <div class="comparison-container" id="comparison-container" style="margin: 0 auto;">
-                <canvas id="canvas-comparison"></canvas>
-                <div class="comparison-divider" id="comparison-divider"></div>
-              </div>
-            </div>
-            
-            <div class="comparison-labels" style="margin-bottom: var(--space-md);">
-              <span>◀ Original</span>
-              <span>Drag to compare</span>
-              <span>Compressed ▶</span>
-            </div>
-
-            <div class="stats-grid" style="margin-top: var(--space-lg);">
-              <div class="stat-card">
-                <div class="stat-value" id="stat-final-original">—</div>
-                <div class="stat-label">Original Size</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-final-compressed">—</div>
-                <div class="stat-label">Est. Compressed</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-final-ratio">—</div>
-                <div class="stat-label">Compression Ratio</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-final-psnr">—</div>
-                <div class="stat-label">PSNR (dB)</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-final-zeros">—</div>
-                <div class="stat-label">Zero Coefficients</div>
-              </div>
-            </div>
-
-            <div class="info-box">
-              <div class="info-title">🎉 That's JPEG Compression!</div>
-              <p>You've just walked through the complete JPEG compression pipeline. The real JPEG standard also includes Huffman coding after the RLE step, which further reduces the file size. Try adjusting the quality slider to see how it affects the image — lower quality means more aggressive quantization, more zeros, smaller files, but more visible artifacts (especially blockiness along 8×8 block boundaries).</p>
-            </div>
-            
-            <div style="text-align: center; margin-top: var(--space-lg);">
-              <button class="btn btn-primary" id="btn-download">⬇️ Download Compressed Image</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- Navigation Footer -->
-    <footer class="nav-footer">
-      <button class="btn btn-secondary" id="btn-prev" disabled>
-        <span class="arrow-icon left">←</span> Previous
-      </button>
-      <div class="step-indicator" id="step-indicator">Step 1 of 8</div>
-      <button class="btn btn-primary" id="btn-next">
-        Next <span class="arrow-icon right">→</span>
-      </button>
-    </footer>
+      </a>
+    </div>
   </div>
-
-  <script type="module" src="js/app.js"></script>
 </body>
 </html>

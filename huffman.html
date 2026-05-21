@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Huffman Coding Visualizer</title>
+  <meta name="description" content="Interactive visual guide showing how Huffman Coding compresses an image.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Specific styles for Huffman Visualizer */
+    .histogram-container {
+      width: 100%;
+      height: 300px;
+      display: flex;
+      align-items: flex-end;
+      gap: 1px;
+      margin-top: var(--space-lg);
+      border-bottom: 2px solid var(--border-subtle);
+      padding-bottom: 5px;
+    }
+    .hist-bar {
+      flex: 1;
+      background: var(--accent-gradient);
+      min-height: 1px;
+      border-radius: 2px 2px 0 0;
+      transition: height 0.3s ease;
+    }
+    .hist-bar:hover {
+      background: #fff;
+    }
+    .dictionary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: var(--space-md);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .dictionary-table th, .dictionary-table td {
+      padding: var(--space-sm);
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .dictionary-table th {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .color-swatch {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      vertical-align: middle;
+      margin-right: var(--space-sm);
+      border: 1px solid var(--border-subtle);
+    }
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header" style="position: relative;">
+      <a href="index.html" class="btn btn-secondary btn-sm" style="position: absolute; left: 0; top: 0;">← Back to Hub</a>
+      <h1>Huffman Coding <span class="gradient-text">Visualizer</span></h1>
+      <p class="subtitle">See how variable-length coding perfectly compresses image data</p>
+    </header>
+
+    <nav class="stepper" id="stepper">
+      <div class="step-item active" data-step="0">
+        <div class="step-circle"><span class="step-icon">📷</span></div>
+        <span class="step-label">Load Image</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="1">
+        <div class="step-circle"><span class="step-icon">📊</span></div>
+        <span class="step-label">Histogram</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="2">
+        <div class="step-circle"><span class="step-icon">🌳</span></div>
+        <span class="step-label">Dictionary</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" data-step="3">
+        <div class="step-circle"><span class="step-icon">✨</span></div>
+        <span class="step-label">Result</span>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <!-- STEP 0: Load Image -->
+      <section class="step-panel active" id="step-0">
+        <div class="glass-card">
+          <div class="step-header">
+            <h2 class="step-title"><span class="step-number-badge">1</span> Load Your Image</h2>
+            <p class="step-description">Upload an image to compress. We will convert it to Grayscale so we have exactly 256 unique symbols (0 = Black, 255 = White) to encode.</p>
+          </div>
+          <div class="upload-area" id="upload-area">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Drop an image here or click to upload</div>
+            <input type="file" id="file-input" accept="image/*">
+          </div>
+          <div class="sample-row" style="margin-top: var(--space-md);">
+            <button class="btn btn-secondary btn-sm" id="btn-sample-photo">🏞️ Photo Scene</button>
+            <button class="btn btn-secondary btn-sm" id="btn-sample-shapes">🔶 Geometric Shapes</button>
+            <button class="btn btn-secondary btn-sm" id="btn-sample-binary">🏁 Two-Tone</button>
+          </div>
+        </div>
+
+        <div class="glass-card" id="image-preview-card" style="display: none; margin-top: var(--space-md);">
+          <div class="step-body two-column">
+            <div class="image-preview">
+              <canvas id="canvas-original"></canvas>
+            </div>
+            <div>
+              <h3 style="font-size: var(--font-size-lg); margin-bottom: var(--space-md);">Grayscale Conversion</h3>
+              <canvas id="canvas-grayscale" style="max-width: 100%; border-radius: var(--radius-md);"></canvas>
+              <div class="info-box" style="margin-top: var(--space-md);">
+                <div class="info-title">💡 Why Grayscale?</div>
+                <p>A full color image has over 16 million possible RGB colors! By converting to grayscale, we limit our "alphabet" to just 256 possible shades of gray. This makes it perfect for visualizing a Huffman Tree.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 1: Histogram -->
+      <section class="step-panel" id="step-1">
+        <div class="glass-card">
+          <div class="step-header">
+            <h2 class="step-title"><span class="step-number-badge">2</span> Frequency Histogram</h2>
+            <p class="step-description">Huffman coding assigns the shortest binary codes to the most frequent symbols. Let's count exactly how many times each shade of gray appears in your image.</p>
+          </div>
+          <div class="step-body">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="stat-total-pixels">—</div>
+                <div class="stat-label">Total Pixels Analyzed</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-unique-colors">—</div>
+                <div class="stat-label">Unique Shades Used</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-most-frequent">—</div>
+                <div class="stat-label">Most Frequent Shade</div>
+              </div>
+            </div>
+
+            <div class="histogram-container" id="histogram-container">
+              <!-- Bars injected by JS -->
+            </div>
+            <div style="display: flex; justify-content: space-between; color: var(--text-muted); font-size: 12px; margin-top: 5px;">
+              <span>0 (Black)</span>
+              <span>128 (Mid-Gray)</span>
+              <span>255 (White)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: Dictionary -->
+      <section class="step-panel" id="step-2">
+        <div class="glass-card">
+          <div class="step-header">
+            <h2 class="step-title"><span class="step-number-badge">3</span> The Huffman Dictionary</h2>
+            <p class="step-description">The algorithm built a binary tree where the most frequent colors are at the top (short codes) and rare colors are at the bottom (long codes). Here is the final mapping.</p>
+          </div>
+          <div class="step-body">
+            <div class="table-container">
+              <table class="dictionary-table">
+                <thead>
+                  <tr>
+                    <th>Color (0-255)</th>
+                    <th>Frequency</th>
+                    <th>Standard Binary (8 bits)</th>
+                    <th>Huffman Code</th>
+                    <th>Savings / Penalty</th>
+                  </tr>
+                </thead>
+                <tbody id="dictionary-body">
+                  <!-- Rows injected by JS -->
+                </tbody>
+              </table>
+            </div>
+            <div class="info-box" style="margin-top: var(--space-md);">
+              <div class="info-title">🧠 Variable-Length Magic</div>
+              <p>Standard raw images use exactly 8 bits for every single pixel, regardless of how common it is. Notice how the most common colors now use 2, 3, or 4 bits! However, very rare colors might end up using 10 or 12 bits. As long as the common colors heavily outnumber the rare ones, we save massive amounts of space overall.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3: Result -->
+      <section class="step-panel" id="step-3">
+        <div class="glass-card">
+          <div class="step-header">
+            <h2 class="step-title"><span class="step-number-badge">4</span> Compression Result</h2>
+            <p class="step-description">Unlike JPEG, Huffman Coding is 100% <strong>lossless</strong>. When we decompress the binary data, the image will be pixel-perfect identical to the original grayscale image.</p>
+          </div>
+          <div class="step-body">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="res-orig-size">—</div>
+                <div class="stat-label">Original File Size</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="res-comp-size">—</div>
+                <div class="stat-label">Compressed File Size</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="res-ratio">—</div>
+                <div class="stat-label">Compression Ratio</div>
+              </div>
+            </div>
+
+            <div class="info-box" style="margin-top: var(--space-md);">
+              <div class="info-title">🤔 Why isn't the file 10x smaller?</div>
+              <p>Raw pixel data in photographs is very "noisy", meaning almost all 256 shades of gray are used relatively equally. Huffman coding works best when there's a massive imbalance in frequencies. This is exactly why JPEG first uses <strong>DCT and Quantization</strong> — to mathematically force the data into long sequences of zeros (creating a massive imbalance) before finally applying Huffman coding to shrink it down to a tiny size!</p>
+            </div>
+
+            <div style="text-align: center; margin-top: var(--space-lg);">
+              <button class="btn btn-primary" id="btn-download">⬇️ Download Reconstructed Image</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="nav-footer">
+      <button class="btn btn-secondary" id="btn-prev" disabled>
+        <span class="arrow-icon left">←</span> Previous
+      </button>
+      <div class="step-indicator" id="step-indicator">Step 1 of 4</div>
+      <button class="btn btn-primary" id="btn-next">
+        Next <span class="arrow-icon right">→</span>
+      </button>
+    </footer>
+  </div>
+
+  <script type="module" src="js/huffman-app.js"></script>
+</body>
+</html>
